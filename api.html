@@ -1,0 +1,67 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+	<title>api</title>
+	<meta charset="utf-8">
+	 <script src="pako-1.0.6/dist/pako.min.js"></script>
+	<script type="text/javascript">
+		var ws = new WebSocket("wss://api.huobi.pro/ws");
+		ws.onopen = function () {
+			console.log("connection establish");
+			var subscribe = {"sub": "market.bchusdt.kline.5min","id": "bchusdt"};
+            ws.send(JSON.stringify(subscribe));
+            console.log("send msg");
+		};
+
+		ws.onmessage = function(event){
+			console.log("receive msg");
+			var blob = event.data;
+			var reader = new FileReader();
+			reader.onload = function(e){
+				var ploydata = new Uint8Array(e.target.result);
+				var msg = pako.inflate(ploydata,{to:'string'});
+				handleData(msg);
+				console.log(msg);
+			};	
+
+			reader.readAsArrayBuffer(blob,"utf-8");
+
+		};
+
+		ws.onclose = function(){
+			console.log('connection closed');
+		};
+
+		function handleData(msg){
+			var data = JSON.parse(msg);
+			if (data.ping) {
+				sendHeartMessage(data.ping);
+				return;
+			}
+
+			if (data.status == 'ok' && data.subbed) {
+				handleReponseData(data);
+				return
+			}
+		}
+
+		function sendHeartMessage(ping){
+			ws.send(JSON.stringify({"pong":ping}));
+			console.log("send heart msg");
+		}	
+
+		function handleReponseData(data){
+			console.log('handleReponseData');
+		}
+
+
+
+
+
+	</script>
+</head>
+<body>
+
+</body>
+</html>
